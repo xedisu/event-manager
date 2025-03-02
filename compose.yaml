@@ -1,0 +1,16 @@
+services:
+  mongodb:
+    image: 'mongo:latest'
+    environment:
+      - 'MONGO_INITDB_DATABASE=mongoDB'
+      - 'MONGO_INITDB_ROOT_PASSWORD=cata'
+      - 'MONGO_INITDB_ROOT_USERNAME=bobo'
+    ports:
+      - '27017'
+  rabbitmq:
+    image: 'rabbitmq:latest'
+    environment:
+      - 'RABBITMQ_DEFAULT_PASS=cata'
+      - 'RABBITMQ_DEFAULT_USER=bobo'
+    ports:
+      - '5672'
