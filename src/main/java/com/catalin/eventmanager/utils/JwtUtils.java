@@ -13,35 +13,31 @@ public class JwtUtils {
 
     private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    }
+
     public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(key, SignatureAlgorithm.HS256)  // ✅ Ensure signing, NOT encryption
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String extractUsername(String token) {
-        return Jwts.parser()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)  // ✅ Ensure parsing a signed JWT (JWS)
-                .getBody()
-                .getSubject();
+        return Jwts.parser().setSigningKey(getSigningKey()).build()
+                .parseClaimsJws(token)
+                .getBody().getSubject();
     }
 
     public boolean validateToken(String token, String username) {
-        return username.equals(extractUsername(token)) && !isTokenExpired(token);
+        return (username.equals(extractUsername(token)) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {
-        return Jwts.parser()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getExpiration()
-                .before(new Date());
+        return Jwts.parser().setSigningKey(getSigningKey()).build()
+                .parseClaimsJws(token).getBody().getExpiration().before(new Date());
     }
 }

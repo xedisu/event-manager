@@ -3,8 +3,8 @@ services:
     image: 'mongo:latest'
     environment:
       - 'MONGO_INITDB_DATABASE=mongoDB'
-      - 'MONGO_INITDB_ROOT_PASSWORD=cata'
       - 'MONGO_INITDB_ROOT_USERNAME=bobo'
+      - 'MONGO_INITDB_ROOT_PASSWORD=cata'
     ports:
       - '27017'
   rabbitmq:
