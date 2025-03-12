@@ -17,6 +17,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
@@ -46,5 +47,19 @@ public class UserControllerIntegrationTest {
         HttpServletResponse httpServletResponse = mockMvc.perform(get("/user/info")).andReturn().getResponse();
 
         assertEquals(HttpStatus.OK.value(), httpServletResponse.getStatus());
+    }
+
+
+    @Test
+    @DisplayName("When /user/info is called with invalid JWTToken, expect 401 code")
+    void testInvalidJWT() throws Exception {
+        doAnswer(invocation -> {
+            HttpServletResponse response = invocation.getArgument(1);
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            return null;
+        }).when(jwtFilter).doFilterInternal(any(HttpServletRequest.class), any(HttpServletResponse.class), any(FilterChain.class));
+
+        HttpServletResponse httpServletResponse = mockMvc.perform(get("/user/info")).andReturn().getResponse();
+        assertEquals(HttpStatus.UNAUTHORIZED.value(), httpServletResponse.getStatus());
     }
 }
