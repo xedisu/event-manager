@@ -1,15 +1,11 @@
 package com.catalin.eventmanager.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-
 import com.catalin.eventmanager.config.JwtFilter;
 import com.catalin.eventmanager.config.SecurityConfig;
+import com.catalin.eventmanager.documents.User;
+import com.catalin.eventmanager.service.UserService;
 import com.catalin.eventmanager.utils.JwtUtils;
-
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -25,21 +21,35 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+
 @WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
 public class UserControllerIntegrationTest {
-    @MockitoBean JwtUtils jwtUtils;
-    @InjectMocks private JwtFilter jwtFilter;
-    @MockitoBean private UserDetailsService userDetailsService;
-    @Autowired private MockMvc mockMvc;
+    @MockitoBean
+    JwtUtils jwtUtils;
+    @InjectMocks
+    private JwtFilter jwtFilter;
+    @MockitoBean
+    private UserDetailsService userDetailsService;
+    @MockitoBean
+    private UserService userService;
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
     @DisplayName("When /user/info is called, expect 200 code")
     void test() throws Exception {
         UserDetails userDetails =
                 new org.springframework.security.core.userdetails.User(
-                        "user", "pula", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                        "user", "password", List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
+        User user = new User("ID",
+                "user", "password", "ROLE_USER");
+        when(userService.getUserInfo("user")).thenReturn(java.util.Optional.of(user));
+        
         String token = "test-token";
         when(userDetailsService.loadUserByUsername("user")).thenReturn(userDetails);
 
@@ -92,7 +102,7 @@ public class UserControllerIntegrationTest {
     void test4() throws Exception {
         UserDetails userDetails =
                 new org.springframework.security.core.userdetails.User(
-                        "user", "pula", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                        "user", "password", List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
         String token = "test-token";
         when(userDetailsService.loadUserByUsername("user")).thenReturn(userDetails);
@@ -109,4 +119,32 @@ public class UserControllerIntegrationTest {
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), httpServletResponse.getStatus());
     }
+
+    @Test
+    @DisplayName("When /user/info is called with an invalid role, expect 403 code")
+    void test5() throws Exception {
+        UserDetails userDetails =
+                new org.springframework.security.core.userdetails.User(
+                        "user", "password", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+        String token = "test-token";
+        when(userDetailsService.loadUserByUsername("user")).thenReturn(userDetails);
+
+        when(jwtUtils.validateToken(token)).thenReturn(true);
+        when(jwtUtils.extractUsername(token)).thenReturn("user");
+        when(jwtUtils.extractAuthorities(token))
+                .thenReturn(List.of(new SimpleGrantedAuthority("invalid_role")));
+
+        HttpServletResponse httpServletResponse =
+                mockMvc.perform(
+                                get("/user/info")
+                                        .param("username", "user")
+                                        .header("Authorization", "Bearer " + token))
+                        .andReturn()
+                        .getResponse();
+
+        assertEquals(HttpStatus.FORBIDDEN.value(), httpServletResponse.getStatus());
+    }
+
+
 }
