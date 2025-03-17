@@ -15,6 +15,9 @@ public class UserService {
     }
 
     public Optional<User> getUserInfo(String username) {
+        if (username == null || username.isBlank()) {
+            return Optional.empty();
+        }
         return userRepository.findByUsername(username);
     }
 }
